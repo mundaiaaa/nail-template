@@ -1,0 +1,300 @@
+// Prisma schema for the nail salon booking SaaS template.
+// See prisma/schema.prisma docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------- Owner (platform admin) auth ----------
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String
+  emailVerified Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  shop                    Shop?
+  sessions                Session[]
+  emailVerificationTokens EmailVerificationToken[]
+  passwordResetTokens     PasswordResetToken[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  userAgent String?
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model EmailVerificationToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ---------- Shop / tenant ----------
+
+model Shop {
+  id                       String   @id @default(cuid())
+  ownerId                  String   @unique
+  name                     String
+  slug                     String   @unique
+  published                Boolean  @default(false)
+  logoKey                  String?
+  themeColor               String   @default("#d6336c")
+  fontKey                  String?
+  fontName                 String?
+  cancellationEnabled      Boolean  @default(false)
+  cancellationMinNoticeHrs Int      @default(24)
+  depositRequired          Boolean  @default(false)
+  depositAmount            Int?
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  owner       User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  branches    Branch[]
+  customers   Customer[]
+  decorations PageDecoration[]
+  backgrounds PageBackground[]
+}
+
+enum AssignmentMode {
+  CUSTOMER_CHOICE
+  RANDOM
+  SKILL_MATCH
+}
+
+model Branch {
+  id             String         @id @default(cuid())
+  shopId         String
+  name           String
+  address        String
+  phone          String
+  assignmentMode AssignmentMode @default(CUSTOMER_CHOICE)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  shop          Shop            @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  businessHours BusinessHour[]
+  services      Service[]
+  technicians   Technician[]
+  bookings      Booking[]
+
+  @@index([shopId])
+}
+
+model BusinessHour {
+  id        String  @id @default(cuid())
+  branchId  String
+  dayOfWeek Int // 0 = Sunday .. 6 = Saturday
+  isClosed  Boolean @default(false)
+  openTime  String? // "HH:mm"
+  closeTime String? // "HH:mm"
+
+  branch Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@unique([branchId, dayOfWeek])
+}
+
+model Service {
+  id              String   @id @default(cuid())
+  branchId        String
+  name            String
+  price           Int
+  durationMinutes Int
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  branch   Branch    @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  bookings Booking[]
+
+  @@index([branchId])
+}
+
+model Technician {
+  id           String   @id @default(cuid())
+  branchId     String
+  name         String
+  specialties  String[] @default([])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  branch       Branch                  @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  workingHours TechnicianWorkingHour[]
+  timeOff      TechnicianTimeOff[]
+  bookings     Booking[]
+
+  @@index([branchId])
+}
+
+model TechnicianWorkingHour {
+  id           String  @id @default(cuid())
+  technicianId String
+  dayOfWeek    Int
+  isOff        Boolean @default(false)
+  startTime    String? // "HH:mm"
+  endTime      String? // "HH:mm"
+
+  technician Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+
+  @@unique([technicianId, dayOfWeek])
+}
+
+model TechnicianTimeOff {
+  id           String   @id @default(cuid())
+  technicianId String
+  date         DateTime @db.Date
+
+  technician Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+
+  @@unique([technicianId, date])
+}
+
+// ---------- Customers (per-shop) ----------
+
+model Customer {
+  id           String   @id @default(cuid())
+  shopId       String
+  email        String
+  passwordHash String
+  name         String
+  phone        String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  shop     Shop              @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  sessions CustomerSession[]
+  bookings Booking[]
+
+  @@unique([shopId, email])
+}
+
+model CustomerSession {
+  id         String   @id @default(cuid())
+  customerId String
+  tokenHash  String   @unique
+  userAgent  String?
+  createdAt  DateTime @default(now())
+  expiresAt  DateTime
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId])
+}
+
+// ---------- Bookings ----------
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  REJECTED
+  CANCELLED
+}
+
+enum DepositStatus {
+  NOT_REQUIRED
+  PENDING
+  PAID
+}
+
+model Booking {
+  id              String        @id @default(cuid())
+  branchId        String
+  serviceId       String
+  technicianId    String?
+  customerId      String?
+  guestName       String?
+  guestPhone      String?
+  startTime       DateTime
+  endTime         DateTime
+  status          BookingStatus @default(PENDING)
+  depositRequired Boolean       @default(false)
+  depositStatus   DepositStatus @default(NOT_REQUIRED)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  branch     Branch      @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  service    Service     @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  technician Technician? @relation(fields: [technicianId], references: [id], onDelete: SetNull)
+  customer   Customer?   @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
+  @@index([branchId, status])
+  @@index([technicianId, startTime])
+}
+
+// ---------- Visual customization ----------
+
+enum ShopPage {
+  LANDING
+  BRANCH_SELECT
+  SERVICE_SELECT
+  TECHNICIAN_SELECT
+  SLOT_SELECT
+  CONFIRM
+  ACCOUNT
+}
+
+model PageDecoration {
+  id           String   @id @default(cuid())
+  shopId       String
+  page         ShopPage
+  imageKey     String
+  xPct         Float
+  yPct         Float
+  widthPct     Float
+  heightPct    Float
+  rotationDeg  Float    @default(0)
+  zIndex       Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@index([shopId, page])
+}
+
+model PageBackground {
+  id               String   @id @default(cuid())
+  shopId           String
+  page             ShopPage
+  backgroundColor  String?
+  backgroundImageKey String?
+  updatedAt        DateTime @updatedAt
+
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@unique([shopId, page])
+}
