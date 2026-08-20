@@ -27,8 +27,17 @@ class ConsoleEmailService implements EmailService {
       `\n--- 📧 Email (dev) ---\nTo: ${message.to}\nSubject: ${message.subject}\n\n${message.body}\n----------------------\n`
     );
 
-    await mkdir(path.dirname(this.logPath), { recursive: true });
-    await appendFile(this.logPath, JSON.stringify(entry) + "\n", "utf-8");
+    // Best-effort only: serverless runtimes (e.g. Vercel) have a read-only
+    // filesystem outside /tmp, so this write is expected to fail there.
+    // The console.log above is what actually matters — on Vercel it's
+    // readable via `vercel logs`. Never let a logging convenience crash
+    // the request that's sending a real (dev-mode) email.
+    try {
+      await mkdir(path.dirname(this.logPath), { recursive: true });
+      await appendFile(this.logPath, JSON.stringify(entry) + "\n", "utf-8");
+    } catch {
+      // ignore — see comment above
+    }
   }
 }
 
