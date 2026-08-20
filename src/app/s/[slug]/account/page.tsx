@@ -32,12 +32,12 @@ export default async function AccountPage({ params }: { params: Promise<{ slug: 
   });
 
   return (
-    <div className="relative flex flex-1 flex-col gap-6 px-4 py-8 sm:px-6">
+    <div className="relative mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-4 py-8 sm:px-6">
       <PageDecorations shopId={shop.id} page="ACCOUNT" />
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold">{customer.name}，您好</h1>
-          <p className="text-sm text-muted-foreground">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="truncate text-xl font-semibold">{customer.name}，您好</h1>
+          <p className="truncate text-sm text-muted-foreground">
             {customer.email} · {customer.phone}
           </p>
         </div>

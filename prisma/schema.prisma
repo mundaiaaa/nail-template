@@ -74,7 +74,7 @@ model Shop {
   slug                     String   @unique
   published                Boolean  @default(false)
   logoKey                  String?
-  themeColor               String   @default("#d6336c")
+  themeColor               String   @default("#f2a0be")
   fontKey                  String?
   fontName                 String?
   cancellationEnabled      Boolean  @default(false)
