@@ -1,6 +1,7 @@
 import "server-only";
 import { db } from "@/lib/db";
 import { getAvailableSlots } from "@/lib/booking/slots";
+import { sumDurationRange } from "@/lib/booking/duration";
 
 export class SlotUnavailableError extends Error {
   constructor() {
@@ -10,7 +11,7 @@ export class SlotUnavailableError extends Error {
 
 interface CreateBookingParams {
   branchId: string;
-  serviceId: string;
+  serviceIds: string[];
   date: string; // "YYYY-MM-DD"
   startTime: Date;
   technicianId?: string; // required when the branch's assignment mode is CUSTOMER_CHOICE
@@ -25,8 +26,9 @@ interface CreateBookingParams {
 // customers racing for the same slot can't both succeed, then — for
 // RANDOM / SKILL_MATCH branches — picks one of the technicians still free.
 export async function createBookingRequest(params: CreateBookingParams) {
-  const service = await db.service.findUniqueOrThrow({ where: { id: params.serviceId } });
-  const endTime = new Date(params.startTime.getTime() + service.durationMinutes * 60_000);
+  const services = await db.service.findMany({ where: { id: { in: params.serviceIds } } });
+  const durationMinutes = sumDurationRange(services).max;
+  const endTime = new Date(params.startTime.getTime() + durationMinutes * 60_000);
 
   return db.$transaction(async (tx) => {
     const branch = await tx.branch.findUniqueOrThrow({ where: { id: params.branchId } });
@@ -34,7 +36,7 @@ export async function createBookingRequest(params: CreateBookingParams) {
     const slots = await getAvailableSlots(
       {
         branchId: params.branchId,
-        serviceId: params.serviceId,
+        serviceIds: params.serviceIds,
         date: params.date,
         technicianId: params.technicianId,
       },
@@ -50,10 +52,9 @@ export async function createBookingRequest(params: CreateBookingParams) {
         ? (params.technicianId ?? null)
         : match.technicianIds[Math.floor(Math.random() * match.technicianIds.length)];
 
-    return tx.booking.create({
+    const booking = await tx.booking.create({
       data: {
         branchId: params.branchId,
-        serviceId: params.serviceId,
         technicianId: assignedTechnicianId,
         customerId: params.customerId,
         guestName: params.guestName,
@@ -65,5 +66,11 @@ export async function createBookingRequest(params: CreateBookingParams) {
         depositStatus: params.depositRequired ? "PENDING" : "NOT_REQUIRED",
       },
     });
+
+    await tx.bookingService.createMany({
+      data: params.serviceIds.map((serviceId) => ({ bookingId: booking.id, serviceId })),
+    });
+
+    return booking;
   });
 }

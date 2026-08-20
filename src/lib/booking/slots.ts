@@ -3,6 +3,7 @@ import { addMinutes } from "date-fns";
 import { fromZonedTime } from "date-fns-tz";
 import { db } from "@/lib/db";
 import { dayOfWeekForDateString } from "@/lib/days";
+import { sumDurationRange } from "@/lib/booking/duration";
 import type { AssignmentMode } from "@/generated/prisma/enums";
 import type { PrismaTransactionClient } from "@/lib/db";
 
@@ -46,23 +47,28 @@ function matchesSkill(specialties: string[], serviceName: string): boolean {
 
 interface GetSlotsParams {
   branchId: string;
-  serviceId: string;
+  serviceIds: string[];
   date: string; // "YYYY-MM-DD", Taiwan calendar date
   technicianId?: string; // pre-selected technician (assignment mode: CUSTOMER_CHOICE)
 }
 
 type DbClient = typeof db | PrismaTransactionClient;
 
-// Computes bookable start times for a given branch/service/date, honoring
-// branch business hours, each candidate technician's recurring working
-// hours, their blocked-off days, and existing PENDING/CONFIRMED bookings.
-// For RANDOM / SKILL_MATCH branches (no technicianId given), slots are the
-// union across all eligible technicians, each option carrying the list of
-// technician ids still free at that time so a booking submission can pick one.
+// Computes bookable start times for a given branch/service-selection/date,
+// honoring branch business hours, each candidate technician's recurring
+// working hours, their blocked-off days, and existing PENDING/CONFIRMED
+// bookings. For RANDOM / SKILL_MATCH branches (no technicianId given),
+// slots are the union across all eligible technicians, each option
+// carrying the list of technician ids still free at that time so a
+// booking submission can pick one.
 export async function getAvailableSlots(
-  { branchId, serviceId, date, technicianId }: GetSlotsParams,
+  { branchId, serviceIds, date, technicianId }: GetSlotsParams,
   client: DbClient = db
 ): Promise<SlotOption[]> {
+  if (serviceIds.length === 0) {
+    throw new Error("請至少選擇一項服務");
+  }
+
   // Sequential, not Promise.all: when `client` is an interactive transaction
   // (see create-booking.ts), it holds a single reserved connection that
   // can't run two queries concurrently.
@@ -70,7 +76,16 @@ export async function getAvailableSlots(
     where: { id: branchId },
     include: { businessHours: true, technicians: { include: { workingHours: true, timeOff: true } } },
   });
-  const service = await client.service.findUniqueOrThrow({ where: { id: serviceId } });
+  const services = await client.service.findMany({ where: { id: { in: serviceIds }, branchId } });
+  if (services.length !== serviceIds.length) {
+    throw new Error("服務項目不存在於此分店");
+  }
+  // Selected services are booked back-to-back as one continuous block,
+  // reserved using the SUM of each service's maximum duration —
+  // conservative, so a longer-than-average session never bleeds into the
+  // next customer's slot. The min/max range is only shown to the customer
+  // as an estimate (see formatDurationRange / sumDurationRange).
+  const durationMinutes = sumDurationRange(services).max;
 
   if (branch.assignmentMode === "CUSTOMER_CHOICE" && !technicianId) {
     throw new Error("此分店需先選擇指定設計師");
@@ -90,7 +105,7 @@ export async function getAvailableSlots(
   if (technicianId) {
     candidates = candidates.filter((t) => t.id === technicianId);
   } else if (branch.assignmentMode === ("SKILL_MATCH" satisfies AssignmentMode)) {
-    candidates = candidates.filter((t) => matchesSkill(t.specialties, service.name));
+    candidates = candidates.filter((t) => services.some((s) => matchesSkill(t.specialties, s.name)));
   }
 
   const bookings = await client.booking.findMany({
@@ -127,10 +142,10 @@ export async function getAvailableSlots(
 
     for (
       let start = window.start;
-      addMinutes(start, service.durationMinutes) <= window.end;
+      addMinutes(start, durationMinutes) <= window.end;
       start = addMinutes(start, SLOT_GRANULARITY_MINUTES)
     ) {
-      const candidateInterval: Interval = { start, end: addMinutes(start, service.durationMinutes) };
+      const candidateInterval: Interval = { start, end: addMinutes(start, durationMinutes) };
       const conflict = techBookings.some((b) => overlaps(b, candidateInterval));
       if (conflict) continue;
 
@@ -144,7 +159,7 @@ export async function getAvailableSlots(
     .sort(([a], [b]) => a - b)
     .map(([startMs, techIds]) => ({
       startTime: new Date(startMs),
-      endTime: addMinutes(new Date(startMs), service.durationMinutes),
+      endTime: addMinutes(new Date(startMs), durationMinutes),
       technicianIds: Array.from(techIds),
     }));
 }

@@ -13,7 +13,7 @@ const initialState: ConfirmBookingState = {};
 interface ConfirmFormProps {
   slug: string;
   branchId: string;
-  serviceId: string;
+  serviceIds: string;
   technicianId?: string;
   date: string;
   time: string;
@@ -27,7 +27,7 @@ type Mode = "member" | "guest" | "login" | "register";
 export function ConfirmForm({
   slug,
   branchId,
-  serviceId,
+  serviceIds,
   technicianId,
   date,
   time,
@@ -45,7 +45,7 @@ export function ConfirmForm({
     <form action={formAction} className="flex flex-col gap-4">
       <input type="hidden" name="slug" value={slug} />
       <input type="hidden" name="branchId" value={branchId} />
-      <input type="hidden" name="serviceId" value={serviceId} />
+      <input type="hidden" name="serviceIds" value={serviceIds} />
       {technicianId && <input type="hidden" name="technicianId" value={technicianId} />}
       <input type="hidden" name="date" value={date} />
       <input type="hidden" name="time" value={time} />

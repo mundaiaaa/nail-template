@@ -6,6 +6,52 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ServiceDialog } from "./service-dialog";
 import { DeleteServiceButton } from "./delete-service-button";
+import type { Service } from "@/generated/prisma/client";
+
+function durationLabel(service: Pick<Service, "durationMinMinutes" | "durationMaxMinutes">) {
+  return service.durationMinMinutes === service.durationMaxMinutes
+    ? `${service.durationMinMinutes} 分鐘`
+    : `${service.durationMinMinutes}–${service.durationMaxMinutes} 分鐘`;
+}
+
+function ServiceTable({ branchId, services }: { branchId: string; services: Service[] }) {
+  if (services.length === 0) {
+    return <p className="text-sm text-muted-foreground">尚未新增任何服務項目</p>;
+  }
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>服務名稱</TableHead>
+          <TableHead>價格</TableHead>
+          <TableHead>時長</TableHead>
+          <TableHead className="text-right">操作</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {services.map((service) => (
+          <TableRow key={service.id}>
+            <TableCell>{service.name}</TableCell>
+            <TableCell>NT$ {service.price.toLocaleString("zh-TW")}</TableCell>
+            <TableCell>{durationLabel(service)}</TableCell>
+            <TableCell className="flex justify-end gap-2">
+              <ServiceDialog
+                branchId={branchId}
+                service={service}
+                trigger={
+                  <Button variant="outline" size="sm">
+                    編輯
+                  </Button>
+                }
+              />
+              <DeleteServiceButton branchId={branchId} serviceId={service.id} />
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  );
+}
 
 export default async function ServicesPage({ params }: { params: Promise<{ branchId: string }> }) {
   const { shop } = await requireShop();
@@ -15,53 +61,36 @@ export default async function ServicesPage({ params }: { params: Promise<{ branc
   if (!branch) notFound();
 
   const services = await db.service.findMany({ where: { branchId }, orderBy: { createdAt: "asc" } });
+  const mainServices = services.filter((s) => s.category === "MAIN");
+  const addonServices = services.filter((s) => s.category === "ADDON");
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <div>
-          <CardTitle>服務項目</CardTitle>
-          <CardDescription>此分店提供的美甲服務與價格</CardDescription>
-        </div>
-        <ServiceDialog branchId={branchId} trigger={<Button>新增服務</Button>} />
-      </CardHeader>
-      <CardContent>
-        {services.length === 0 ? (
-          <p className="text-sm text-muted-foreground">尚未新增任何服務項目</p>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>服務名稱</TableHead>
-                <TableHead>價格</TableHead>
-                <TableHead>時長</TableHead>
-                <TableHead className="text-right">操作</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {services.map((service) => (
-                <TableRow key={service.id}>
-                  <TableCell>{service.name}</TableCell>
-                  <TableCell>NT$ {service.price.toLocaleString("zh-TW")}</TableCell>
-                  <TableCell>{service.durationMinutes} 分鐘</TableCell>
-                  <TableCell className="flex justify-end gap-2">
-                    <ServiceDialog
-                      branchId={branchId}
-                      service={service}
-                      trigger={
-                        <Button variant="outline" size="sm">
-                          編輯
-                        </Button>
-                      }
-                    />
-                    <DeleteServiceButton branchId={branchId} serviceId={service.id} />
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
-      </CardContent>
-    </Card>
+    <div className="flex flex-col gap-4">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>主項目</CardTitle>
+            <CardDescription>顧客預約時必須先選擇至少一項主項目</CardDescription>
+          </div>
+          <ServiceDialog branchId={branchId} defaultCategory="MAIN" trigger={<Button>新增主項目</Button>} />
+        </CardHeader>
+        <CardContent>
+          <ServiceTable branchId={branchId} services={mainServices} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>加購項</CardTitle>
+            <CardDescription>需先選擇主項目後才能加選，可複選</CardDescription>
+          </div>
+          <ServiceDialog branchId={branchId} defaultCategory="ADDON" trigger={<Button>新增加購項</Button>} />
+        </CardHeader>
+        <CardContent>
+          <ServiceTable branchId={branchId} services={addonServices} />
+        </CardContent>
+      </Card>
+    </div>
   );
 }

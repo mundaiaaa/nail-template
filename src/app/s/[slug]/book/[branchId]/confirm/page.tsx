@@ -4,6 +4,8 @@ import { getCurrentCustomer } from "@/lib/auth/customer-session";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ConfirmForm } from "./confirm-form";
 import { PageDecorations } from "@/app/s/[slug]/page-decorations";
+import { sumDurationRange, formatDurationRange } from "@/lib/booking/duration";
+import { parseServiceIds } from "@/lib/booking/query";
 
 function formatDateTimeTaipei(d: Date): string {
   return new Intl.DateTimeFormat("zh-TW", {
@@ -17,23 +19,26 @@ export default async function ConfirmBookingPage({
   params,
   searchParams,
 }: {
-  params: Promise<{ slug: string; branchId: string; serviceId: string }>;
-  searchParams: Promise<{ technicianId?: string; date?: string; time?: string; rescheduleFrom?: string }>;
+  params: Promise<{ slug: string; branchId: string }>;
+  searchParams: Promise<{ serviceIds?: string; technicianId?: string; date?: string; time?: string; rescheduleFrom?: string }>;
 }) {
-  const { slug, branchId, serviceId } = await params;
-  const { technicianId, date, time, rescheduleFrom } = await searchParams;
-  if (!date || !time) notFound();
+  const { slug, branchId } = await params;
+  const { serviceIds: rawServiceIds, technicianId, date, time, rescheduleFrom } = await searchParams;
+  const serviceIds = parseServiceIds(rawServiceIds);
+  if (!date || !time || serviceIds.length === 0) notFound();
 
   const shop = await db.shop.findUnique({ where: { slug } });
   if (!shop || !shop.published) notFound();
 
   const branch = await db.branch.findFirst({ where: { id: branchId, shopId: shop.id } });
-  const service = await db.service.findFirst({ where: { id: serviceId, branchId } });
-  if (!branch || !service) notFound();
+  const services = await db.service.findMany({ where: { id: { in: serviceIds }, branchId } });
+  if (!branch || services.length !== serviceIds.length) notFound();
 
   const technician = technicianId ? await db.technician.findFirst({ where: { id: technicianId, branchId } }) : null;
   const customer = await getCurrentCustomer(shop.id);
   const startTime = new Date(time);
+  const duration = sumDurationRange(services);
+  const totalPrice = services.reduce((sum, s) => sum + s.price, 0);
 
   return (
     <div className="relative mx-auto flex w-full max-w-lg flex-col gap-6 px-4 py-8">
@@ -45,14 +50,21 @@ export default async function ConfirmBookingPage({
 
       <Card>
         <CardHeader>
-          <CardTitle>{service.name}</CardTitle>
+          <CardTitle>服務項目</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-1 text-sm">
           <p>分店：{branch.name}</p>
+          <ul className="list-inside list-disc">
+            {services.map((s) => (
+              <li key={s.id}>
+                {s.name}（{s.category === "ADDON" ? "加購" : "主項目"}） · NT$ {s.price.toLocaleString("zh-TW")}
+              </li>
+            ))}
+          </ul>
           <p>時間：{formatDateTimeTaipei(startTime)}</p>
-          <p>時長：{service.durationMinutes} 分鐘</p>
+          <p>預估時長：{formatDurationRange(duration.min, duration.max)}</p>
           {technician && <p>指定美甲師：{technician.name}</p>}
-          <p>價格：NT$ {service.price.toLocaleString("zh-TW")}</p>
+          <p className="font-medium">總價：NT$ {totalPrice.toLocaleString("zh-TW")}</p>
         </CardContent>
       </Card>
 
@@ -72,7 +84,7 @@ export default async function ConfirmBookingPage({
       <ConfirmForm
         slug={slug}
         branchId={branchId}
-        serviceId={serviceId}
+        serviceIds={rawServiceIds!}
         technicianId={technicianId}
         date={date}
         time={time}

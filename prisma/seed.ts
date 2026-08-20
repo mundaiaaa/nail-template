@@ -49,12 +49,18 @@ async function main() {
       endTime: dayOfWeek === closedDay ? null : "20:00",
     }));
 
-  const SERVICES = [
-    { name: "卸甲", price: 300, durationMinutes: 30 },
-    { name: "基礎保養", price: 500, durationMinutes: 45 },
-    { name: "光療凝膠", price: 800, durationMinutes: 60 },
-    { name: "手繪造型", price: 1200, durationMinutes: 90 },
+  const MAIN_SERVICES = [
+    { name: "卸甲", price: 300, durationMinMinutes: 30, durationMaxMinutes: 30, category: "MAIN" as const },
+    { name: "基礎保養", price: 500, durationMinMinutes: 45, durationMaxMinutes: 45, category: "MAIN" as const },
+    { name: "光療凝膠", price: 800, durationMinMinutes: 60, durationMaxMinutes: 90, category: "MAIN" as const },
+    { name: "手繪造型", price: 1200, durationMinMinutes: 90, durationMaxMinutes: 120, category: "MAIN" as const },
   ];
+  const ADDON_SERVICES = [
+    { name: "手部去角質", price: 200, durationMinMinutes: 15, durationMaxMinutes: 15, category: "ADDON" as const },
+    { name: "貼鑽點綴", price: 150, durationMinMinutes: 10, durationMaxMinutes: 20, category: "ADDON" as const },
+    { name: "護甲油保護", price: 100, durationMinMinutes: 5, durationMaxMinutes: 10, category: "ADDON" as const },
+  ];
+  const SERVICES = [...MAIN_SERVICES, ...ADDON_SERVICES];
 
   // Branch 1: customer picks their technician
   const branch1 = await db.branch.create({
@@ -165,6 +171,7 @@ async function main() {
   // 24h cancellation window and any "today" edge cases.
   const gelService = await db.service.findFirstOrThrow({ where: { branchId: branch1.id, name: "光療凝膠" } });
   const careService = await db.service.findFirstOrThrow({ where: { branchId: branch1.id, name: "基礎保養" } });
+  const glitterAddon = await db.service.findFirstOrThrow({ where: { branchId: branch1.id, name: "貼鑽點綴" } });
 
   function atTaipeiTime(daysFromNow: number, hour: number, minute = 0): Date {
     const d = new Date();
@@ -176,21 +183,20 @@ async function main() {
   await db.booking.create({
     data: {
       branchId: branch1.id,
-      serviceId: gelService.id,
       technicianId: tech1a.id,
       customerId: customer.id,
       startTime: atTaipeiTime(3, 14),
-      endTime: atTaipeiTime(3, 15),
+      endTime: atTaipeiTime(3, 15, 20), // 光療凝膠 90min + 貼鑽點綴 20min
       status: "PENDING",
       depositRequired: true,
       depositStatus: "PENDING",
+      services: { create: [{ serviceId: gelService.id }, { serviceId: glitterAddon.id }] },
     },
   });
 
   await db.booking.create({
     data: {
       branchId: branch1.id,
-      serviceId: careService.id,
       technicianId: tech1b.id,
       guestName: "陳先生",
       guestPhone: "0922333444",
@@ -199,21 +205,22 @@ async function main() {
       status: "CONFIRMED",
       depositRequired: true,
       depositStatus: "PENDING",
+      services: { create: [{ serviceId: careService.id }] },
     },
   });
 
   await db.booking.create({
     data: {
       branchId: branch1.id,
-      serviceId: gelService.id,
       technicianId: tech1a.id,
       guestName: "林小姐",
       guestPhone: "0933444555",
       startTime: atTaipeiTime(1, 16),
-      endTime: atTaipeiTime(1, 17),
+      endTime: atTaipeiTime(1, 17, 30),
       status: "CANCELLED",
       depositRequired: true,
       depositStatus: "NOT_REQUIRED",
+      services: { create: [{ serviceId: gelService.id }] },
     },
   });
 

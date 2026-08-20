@@ -26,7 +26,9 @@ export async function createServiceAction(
   const parsed = serviceSchema.safeParse({
     name: formData.get("name"),
     price: formData.get("price"),
-    durationMinutes: formData.get("durationMinutes"),
+    durationMinMinutes: formData.get("durationMinMinutes"),
+    durationMaxMinutes: formData.get("durationMaxMinutes"),
+    category: formData.get("category"),
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "輸入資料有誤" };
@@ -51,7 +53,9 @@ export async function updateServiceAction(
   const parsed = serviceSchema.safeParse({
     name: formData.get("name"),
     price: formData.get("price"),
-    durationMinutes: formData.get("durationMinutes"),
+    durationMinMinutes: formData.get("durationMinMinutes"),
+    durationMaxMinutes: formData.get("durationMaxMinutes"),
+    category: formData.get("category"),
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "輸入資料有誤" };

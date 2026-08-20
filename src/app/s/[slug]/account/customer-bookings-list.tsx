@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { canCancelBooking } from "@/lib/booking/cancellation";
 import { cancelBookingAction } from "./booking-actions";
-import type { Shop, Booking, Branch, Service, Technician } from "@/generated/prisma/client";
+import type { Shop, Booking, Branch, Service, Technician, BookingService } from "@/generated/prisma/client";
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: "待確認",
@@ -27,7 +27,11 @@ function formatDateTime(d: Date) {
   }).format(d);
 }
 
-type BookingWithRelations = Booking & { branch: Branch; service: Service; technician: Technician | null };
+type BookingWithRelations = Booking & {
+  branch: Branch;
+  services: (BookingService & { service: Service })[];
+  technician: Technician | null;
+};
 
 export function CustomerBookingsList({
   slug,
@@ -51,7 +55,7 @@ export function CustomerBookingsList({
         return (
           <div key={booking.id} className="flex flex-col gap-2 py-4">
             <div className="flex items-center justify-between">
-              <span className="font-medium">{booking.service.name}</span>
+              <span className="font-medium">{booking.services.map((bs) => bs.service.name).join("、")}</span>
               <Badge variant={STATUS_VARIANTS[booking.status]}>{STATUS_LABELS[booking.status]}</Badge>
             </div>
             <p className="text-sm text-muted-foreground">
@@ -64,7 +68,7 @@ export function CustomerBookingsList({
                 {cancellable ? (
                   <>
                     <Link
-                      href={`/s/${slug}/book/${booking.branchId}/${booking.serviceId}?rescheduleFrom=${booking.id}`}
+                      href={`/s/${slug}/book/${booking.branchId}?rescheduleFrom=${booking.id}&preselect=${booking.services.map((bs) => bs.serviceId).join(",")}`}
                       className="text-sm font-medium underline underline-offset-4"
                     >
                       改期

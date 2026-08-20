@@ -48,7 +48,7 @@ export default async function BookingsPage({
       branch: { shopId: shop.id },
       ...(activeFilter === "ALL" ? {} : { status: activeFilter }),
     },
-    include: { branch: true, service: true, technician: true, customer: true },
+    include: { branch: true, technician: true, customer: true, services: { include: { service: true } } },
     orderBy: { startTime: activeFilter === "PENDING" ? "asc" : "desc" },
   });
 
@@ -83,7 +83,9 @@ export default async function BookingsPage({
           {bookings.map((booking) => (
             <Card key={booking.id}>
               <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-base">{booking.service.name}</CardTitle>
+                <CardTitle className="text-base">
+                  {booking.services.map((bs) => bs.service.name).join("、")}
+                </CardTitle>
                 <Badge variant={STATUS_VARIANTS[booking.status]}>{STATUS_LABELS[booking.status]}</Badge>
               </CardHeader>
               <CardContent className="flex flex-col gap-2">
@@ -96,6 +98,9 @@ export default async function BookingsPage({
                   {booking.customer?.phone ?? booking.guestPhone}）
                   {booking.customer && <span className="text-muted-foreground"> · 會員</span>}
                   {!booking.customer && <span className="text-muted-foreground"> · 訪客</span>}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  總價：NT$ {booking.services.reduce((sum, bs) => sum + bs.service.price, 0).toLocaleString("zh-TW")}
                 </p>
                 {booking.depositRequired && (
                   <p className="text-xs text-muted-foreground">

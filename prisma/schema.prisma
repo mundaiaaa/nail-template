@@ -129,17 +129,24 @@ model BusinessHour {
   @@unique([branchId, dayOfWeek])
 }
 
-model Service {
-  id              String   @id @default(cuid())
-  branchId        String
-  name            String
-  price           Int
-  durationMinutes Int
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+enum ServiceCategory {
+  MAIN
+  ADDON
+}
 
-  branch   Branch    @relation(fields: [branchId], references: [id], onDelete: Cascade)
-  bookings Booking[]
+model Service {
+  id                 String          @id @default(cuid())
+  branchId           String
+  name               String
+  price              Int
+  durationMinMinutes Int
+  durationMaxMinutes Int
+  category           ServiceCategory @default(MAIN)
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  branch          Branch           @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  bookingServices BookingService[]
 
   @@index([branchId])
 }
@@ -233,7 +240,6 @@ enum DepositStatus {
 model Booking {
   id              String        @id @default(cuid())
   branchId        String
-  serviceId       String
   technicianId    String?
   customerId      String?
   guestName       String?
@@ -246,13 +252,29 @@ model Booking {
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
-  branch     Branch      @relation(fields: [branchId], references: [id], onDelete: Cascade)
-  service    Service     @relation(fields: [serviceId], references: [id], onDelete: Cascade)
-  technician Technician? @relation(fields: [technicianId], references: [id], onDelete: SetNull)
-  customer   Customer?   @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  branch     Branch           @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  technician Technician?      @relation(fields: [technicianId], references: [id], onDelete: SetNull)
+  customer   Customer?        @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  services   BookingService[]
 
   @@index([branchId, status])
   @@index([technicianId, startTime])
+}
+
+// A booking can bundle multiple services: one or more MAIN services plus
+// any number of optional ADDON services (add-ons are only selectable once
+// at least one main service is chosen — enforced in the booking flow UI,
+// not at the data layer).
+model BookingService {
+  id        String @id @default(cuid())
+  bookingId String
+  serviceId String
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@unique([bookingId, serviceId])
+  @@index([serviceId])
 }
 
 // ---------- Visual customization ----------

@@ -27,7 +27,7 @@ export default async function AccountPage({ params }: { params: Promise<{ slug: 
 
   const bookings = await db.booking.findMany({
     where: { customerId: customer.id },
-    include: { branch: true, service: true, technician: true },
+    include: { branch: true, technician: true, services: { include: { service: true } } },
     orderBy: { startTime: "desc" },
   });
 

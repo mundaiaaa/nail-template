@@ -1,18 +1,19 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageDecorations } from "@/app/s/[slug]/page-decorations";
+import { ServiceSelectForm } from "./service-select-form";
+import { parseServiceIds } from "@/lib/booking/query";
 
 export default async function SelectServicePage({
   params,
   searchParams,
 }: {
   params: Promise<{ slug: string; branchId: string }>;
-  searchParams: Promise<{ rescheduleFrom?: string }>;
+  searchParams: Promise<{ rescheduleFrom?: string; preselect?: string }>;
 }) {
   const { slug, branchId } = await params;
-  const { rescheduleFrom } = await searchParams;
+  const { rescheduleFrom, preselect } = await searchParams;
+  const preselectedIds = parseServiceIds(preselect);
   const shop = await db.shop.findUnique({ where: { slug } });
   if (!shop || !shop.published) notFound();
 
@@ -22,7 +23,8 @@ export default async function SelectServicePage({
   });
   if (!branch) notFound();
 
-  const qs = rescheduleFrom ? `?rescheduleFrom=${rescheduleFrom}` : "";
+  const mainServices = branch.services.filter((s) => s.category === "MAIN");
+  const addonServices = branch.services.filter((s) => s.category === "ADDON");
   const nextStep = branch.assignmentMode === "CUSTOMER_CHOICE" ? "technician" : "slot";
 
   return (
@@ -33,24 +35,18 @@ export default async function SelectServicePage({
         <p className="text-sm text-muted-foreground">步驟 2 / 4 · {branch.name}</p>
       </div>
 
-      {branch.services.length === 0 ? (
+      {mainServices.length === 0 ? (
         <p className="text-sm text-muted-foreground">此分店目前尚無可預約的服務項目</p>
       ) : (
-        <div className="flex flex-col gap-3">
-          {branch.services.map((service) => (
-            <Link key={service.id} href={`/s/${slug}/book/${branchId}/${service.id}/${nextStep}${qs}`}>
-              <Card className="transition-colors hover:border-foreground/30">
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle>{service.name}</CardTitle>
-                  <span className="text-sm font-medium">NT$ {service.price.toLocaleString("zh-TW")}</span>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">{service.durationMinutes} 分鐘</p>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
-        </div>
+        <ServiceSelectForm
+          slug={slug}
+          branchId={branchId}
+          mainServices={mainServices}
+          addonServices={addonServices}
+          nextStep={nextStep}
+          rescheduleFrom={rescheduleFrom}
+          preselectedIds={preselectedIds}
+        />
       )}
     </div>
   );

@@ -6,6 +6,7 @@ import { hashPassword, verifyPassword } from "@/lib/auth/password";
 import { createCustomerSession, getCurrentCustomer } from "@/lib/auth/customer-session";
 import { createBookingRequest, SlotUnavailableError } from "@/lib/booking/create-booking";
 import { identitySchema } from "@/lib/validation/booking-confirm";
+import { parseServiceIds } from "@/lib/booking/query";
 
 export interface ConfirmBookingState {
   error?: string;
@@ -17,7 +18,7 @@ export async function confirmBookingAction(
 ): Promise<ConfirmBookingState> {
   const slug = formData.get("slug") as string;
   const branchId = formData.get("branchId") as string;
-  const serviceId = formData.get("serviceId") as string;
+  const serviceIds = parseServiceIds(formData.get("serviceIds") as string);
   const date = formData.get("date") as string;
   const timeIso = formData.get("time") as string;
   const technicianId = (formData.get("technicianId") as string) || undefined;
@@ -28,8 +29,10 @@ export async function confirmBookingAction(
   if (!shop || !shop.published) return { error: "找不到此商店" };
 
   const branch = await db.branch.findFirst({ where: { id: branchId, shopId: shop.id } });
-  const service = await db.service.findFirst({ where: { id: serviceId, branchId } });
-  if (!branch || !service) return { error: "找不到此服務項目" };
+  const services = await db.service.findMany({ where: { id: { in: serviceIds }, branchId } });
+  if (!branch || serviceIds.length === 0 || services.length !== serviceIds.length) {
+    return { error: "找不到此服務項目" };
+  }
 
   if (shop.depositRequired && !depositAcknowledged) {
     return { error: "請先確認訂金說明後再送出預約" };
@@ -86,7 +89,7 @@ export async function confirmBookingAction(
   try {
     booking = await createBookingRequest({
       branchId,
-      serviceId,
+      serviceIds,
       date,
       startTime: new Date(timeIso),
       technicianId,

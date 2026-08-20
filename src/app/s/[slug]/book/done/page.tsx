@@ -27,7 +27,7 @@ export default async function BookingDonePage({
   const booking = bookingId
     ? await db.booking.findFirst({
         where: { id: bookingId, branch: { shopId: shop.id } },
-        include: { branch: true, service: true, technician: true },
+        include: { branch: true, technician: true, services: { include: { service: true } } },
       })
     : null;
   if (!booking) notFound();
@@ -41,7 +41,7 @@ export default async function BookingDonePage({
 
       <Card className="text-left">
         <CardHeader>
-          <CardTitle>{booking.service.name}</CardTitle>
+          <CardTitle>{booking.services.map((bs) => bs.service.name).join("、")}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-1 text-sm">
           <p>分店：{booking.branch.name}</p>
