@@ -6,7 +6,7 @@ const PLATFORM_DOMAIN = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN ?? "nailbook.tw"
 // The root platform domain (and localhost, for local dev) pass through
 // untouched so /admin, /login, /s/{slug} etc. keep working directly —
 // matching the "path-based fallback locally" approach chosen for dev.
-export function proxy(req: NextRequest) {
+export function middleware(req: NextRequest) {
   const hostname = (req.headers.get("host") ?? "").split(":")[0];
 
   const isLocalhost = hostname === "localhost" || hostname === "127.0.0.1";
