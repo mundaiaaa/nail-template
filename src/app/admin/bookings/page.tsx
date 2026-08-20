@@ -53,7 +53,7 @@ export default async function BookingsPage({
   });
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <div>
         <h1 className="text-2xl font-semibold">預約管理</h1>
         <p className="text-sm text-muted-foreground">確認或婉拒顧客的預約請求</p>

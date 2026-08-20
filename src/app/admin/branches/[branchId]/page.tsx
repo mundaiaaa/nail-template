@@ -16,7 +16,7 @@ export default async function BranchDetailPage({ params }: { params: Promise<{ b
   if (!branch) notFound();
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <Card>
         <CardHeader>
           <CardTitle>基本資料</CardTitle>

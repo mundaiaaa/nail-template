@@ -31,7 +31,7 @@ export function AdminNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="flex flex-col gap-1">
+    <nav className="flex w-full rounded-lg bg-card p-1 shadow-sm">
       {NAV_ITEMS.map((item) => {
         const active = isActive(pathname, item);
         return (
@@ -39,8 +39,10 @@ export function AdminNav() {
             key={item.href}
             href={item.href}
             className={cn(
-              "rounded-md px-3 py-2 text-sm font-medium transition-colors",
-              active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              "flex-1 whitespace-nowrap rounded-md px-1 py-2 text-center text-xs font-medium transition-colors sm:px-2 sm:py-2.5 sm:text-sm",
+              active
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
             )}
           >
             {item.label}

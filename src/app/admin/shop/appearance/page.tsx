@@ -15,7 +15,7 @@ export default async function AppearancePage() {
   ]);
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <div>
         <h1 className="text-2xl font-semibold">外觀設定</h1>
         <p className="text-sm text-muted-foreground">自訂您網站的標誌、顏色、背景、字型與貼圖裝飾</p>

@@ -13,7 +13,7 @@ export default async function AdminDashboardPage() {
   ]);
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <div>
         <h1 className="text-2xl font-semibold">總覽</h1>
         <p className="text-sm text-muted-foreground">歡迎回來，{shop.name}</p>

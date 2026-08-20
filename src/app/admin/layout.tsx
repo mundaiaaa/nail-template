@@ -10,7 +10,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="border-b px-4 py-3 sm:px-6">
+      <header className="border-b bg-card px-4 py-3 sm:px-6">
         <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-baseline gap-2 sm:gap-3">
             <span className="font-semibold">{shop.name}</span>
@@ -35,10 +35,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           </div>
         </div>
       </header>
-      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-6 sm:flex-row sm:px-6">
-        <aside className="w-full shrink-0 sm:w-48">
-          <AdminNav />
-        </aside>
+      <div className="mx-auto w-full max-w-6xl px-4 pt-4 sm:px-6">
+        <AdminNav />
+      </div>
+      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-4 sm:px-6">
         <main className="min-w-0 flex-1">{children}</main>
       </div>
     </div>
