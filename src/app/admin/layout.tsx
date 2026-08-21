@@ -9,7 +9,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const platformDomain = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN ?? "nailbook.tw";
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div
+      className="flex min-h-screen flex-col bg-cover bg-center"
+      style={{ backgroundImage: "url(/brand/hero-wallpaper.jpg)", backgroundAttachment: "fixed" }}
+    >
       <header className="border-b bg-card px-4 py-3 sm:px-6">
         <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-baseline gap-2 sm:gap-3">
