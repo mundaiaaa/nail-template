@@ -19,11 +19,11 @@ export default function PlatformLandingPage() {
       >
         <p className="text-xs font-medium tracking-[0.28em] text-muted-foreground">NAIL SALON</p>
         <h1 className="max-w-2xl text-4xl font-bold tracking-tight sm:text-5xl">
-          打造您專屬的美甲預約網站
+          製作只專屬於你的美甲預約系統！
         </h1>
         <Divider />
         <p className="max-w-xl text-lg text-muted-foreground">
-          幾分鐘內建立線上預約系統，管理分店、服務項目與美甲師班表，讓顧客隨時預約。
+          幾分鐘內建立線上預約系統，管理分店、服務項目與美甲師排班
         </p>
         <div className="flex gap-3">
           <Button size="lg" render={<Link href="/register" />} nativeButton={false}>
