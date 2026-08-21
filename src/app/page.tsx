@@ -35,7 +35,7 @@ export default function PlatformLandingPage() {
         </div>
       </section>
 
-      <section className="mx-auto grid w-full max-w-4xl grid-cols-1 gap-4 px-4 pb-24 sm:grid-cols-2">
+      <section className="mx-auto grid w-full max-w-4xl grid-cols-1 gap-4 px-4 pt-20 pb-24 sm:grid-cols-2">
         {FEATURES.map((f) => (
           <Card key={f.title}>
             <CardHeader>
