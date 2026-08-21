@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { requireShop } from "@/lib/shop";
@@ -32,23 +33,38 @@ export default async function TechniciansPage({ params }: { params: Promise<{ br
           <div className="flex flex-col divide-y">
             {technicians.map((tech) => (
               <div key={tech.id} className="flex items-center justify-between gap-4 py-3">
-                <div>
-                  <Link
-                    href={`/admin/branches/${branchId}/technicians/${tech.id}`}
-                    className="font-medium underline-offset-4 hover:underline"
-                  >
-                    {tech.name}
-                  </Link>
-                  <div className="mt-1 flex flex-wrap gap-1">
-                    {tech.specialties.length === 0 ? (
-                      <span className="text-xs text-muted-foreground">未設定專長</span>
-                    ) : (
-                      tech.specialties.map((s) => (
-                        <Badge key={s} variant="secondary" className="text-xs">
-                          {s}
-                        </Badge>
-                      ))
-                    )}
+                <div className="flex items-center gap-3">
+                  {tech.imageKey ? (
+                    <Image
+                      src={tech.imageKey}
+                      alt=""
+                      width={40}
+                      height={40}
+                      className="shrink-0 rounded-full border object-cover"
+                    />
+                  ) : (
+                    <div className="flex size-10 shrink-0 items-center justify-center rounded-full border bg-muted text-sm text-muted-foreground">
+                      {tech.name.slice(0, 1)}
+                    </div>
+                  )}
+                  <div>
+                    <Link
+                      href={`/admin/branches/${branchId}/technicians/${tech.id}`}
+                      className="font-medium underline-offset-4 hover:underline"
+                    >
+                      {tech.name}
+                    </Link>
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {tech.specialties.length === 0 ? (
+                        <span className="text-xs text-muted-foreground">未設定專長</span>
+                      ) : (
+                        tech.specialties.map((s) => (
+                          <Badge key={s} variant="secondary" className="text-xs">
+                            {s}
+                          </Badge>
+                        ))
+                      )}
+                    </div>
                   </div>
                 </div>
                 <div className="flex shrink-0 gap-2">

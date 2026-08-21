@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { notFound, redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -57,7 +58,20 @@ export default async function SelectTechnicianPage({
               href={`/s/${slug}/book/${branchId}/slot?${serviceIdsQs}&technicianId=${tech.id}${qs}`}
             >
               <Card className="transition-colors hover:border-foreground/30">
-                <CardHeader>
+                <CardHeader className="flex flex-row items-center gap-3">
+                  {tech.imageKey ? (
+                    <Image
+                      src={tech.imageKey}
+                      alt=""
+                      width={44}
+                      height={44}
+                      className="shrink-0 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-muted text-sm text-muted-foreground">
+                      {tech.name.slice(0, 1)}
+                    </div>
+                  )}
                   <CardTitle>{tech.name}</CardTitle>
                 </CardHeader>
                 {tech.specialties.length > 0 && (

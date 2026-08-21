@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
   { href: "/admin", label: "總覽" },
+  { href: "/admin/calendar", label: "行事曆" },
   { href: "/admin/branches", label: "分店管理" },
   { href: "/admin/bookings", label: "預約管理" },
   { href: "/admin/shop", label: "商店設定" },

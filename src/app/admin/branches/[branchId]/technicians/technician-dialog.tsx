@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import Image from "next/image";
 import { createTechnicianAction, updateTechnicianAction, type TechnicianActionState } from "./actions";
 import { useCloseOnSuccess } from "@/lib/use-close-on-success";
 import { Button } from "@/components/ui/button";
@@ -54,6 +55,24 @@ export function TechnicianDialog({ branchId, technician, trigger }: TechnicianDi
               defaultValue={technician?.specialties.join(", ")}
               placeholder="例如：光療凝膠, 手繪, 法式美甲"
             />
+          </div>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="image">照片（選填）</Label>
+            {technician?.imageKey && (
+              <div className="flex items-center gap-3">
+                <Image
+                  src={technician.imageKey}
+                  alt=""
+                  width={64}
+                  height={64}
+                  className="rounded-full border object-cover"
+                />
+                <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <input type="checkbox" name="clearImage" /> 移除此照片
+                </label>
+              </div>
+            )}
+            <Input id="image" name="image" type="file" accept="image/png,image/jpeg,image/webp,image/gif" />
           </div>
           {state?.error && <p className="text-sm text-destructive">{state.error}</p>}
           <Button type="submit" disabled={pending}>

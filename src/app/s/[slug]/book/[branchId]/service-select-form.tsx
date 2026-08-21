@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
@@ -89,6 +90,15 @@ export function ServiceSelectForm({
                   checked={selectedMain.has(service.id)}
                   onCheckedChange={(checked) => toggleMain(service.id, checked === true)}
                 />
+                {service.imageKey && (
+                  <Image
+                    src={service.imageKey}
+                    alt=""
+                    width={40}
+                    height={40}
+                    className="shrink-0 rounded-md object-cover"
+                  />
+                )}
                 <div>
                   <p className="text-sm font-medium">{service.name}</p>
                   <p className="text-xs text-muted-foreground">{formatServiceDuration(service)}</p>
@@ -121,6 +131,15 @@ export function ServiceSelectForm({
                     checked={selectedAddon.has(service.id)}
                     onCheckedChange={(checked) => toggleAddon(service.id, checked === true)}
                   />
+                  {service.imageKey && (
+                    <Image
+                      src={service.imageKey}
+                      alt=""
+                      width={40}
+                      height={40}
+                      className="shrink-0 rounded-md object-cover"
+                    />
+                  )}
                   <div>
                     <p className="text-sm font-medium">{service.name}</p>
                     <p className="text-xs text-muted-foreground">{formatServiceDuration(service)}</p>

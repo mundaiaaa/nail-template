@@ -173,10 +173,17 @@ async function main() {
   const careService = await db.service.findFirstOrThrow({ where: { branchId: branch1.id, name: "基礎保養" } });
   const glitterAddon = await db.service.findFirstOrThrow({ where: { branchId: branch1.id, name: "貼鑽點綴" } });
 
+  // All three demo branches (and some technicians) are closed on Mondays —
+  // bump forward a day so seeded bookings never land on a day the branch
+  // is actually closed (a purely relative "N days from now" offset would
+  // drift onto a Monday depending on what day it is when this seed runs).
   function atTaipeiTime(daysFromNow: number, hour: number, minute = 0): Date {
     const d = new Date();
     d.setUTCDate(d.getUTCDate() + daysFromNow);
     d.setUTCHours(hour - 8, minute, 0, 0); // Taipei is UTC+8
+    const taipeiDateStr = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Taipei" }).format(d);
+    const taipeiDayOfWeek = new Date(`${taipeiDateStr}T00:00:00Z`).getUTCDay();
+    if (taipeiDayOfWeek === 1) d.setUTCDate(d.getUTCDate() + 1);
     return d;
   }
 

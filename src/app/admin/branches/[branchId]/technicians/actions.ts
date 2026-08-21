@@ -6,6 +6,11 @@ import { db } from "@/lib/db";
 import { requireShop } from "@/lib/shop";
 import { technicianSchema, workingHoursSchema, timeOffSchema } from "@/lib/validation/technician";
 import { ALL_WEEKDAYS } from "@/lib/days";
+import { saveUploadedFile, deleteUploadedFile } from "@/lib/storage";
+
+function hasFile(file: FormDataEntryValue | null): file is File {
+  return file instanceof File && file.size > 0;
+}
 
 export interface TechnicianActionState {
   error?: string;
@@ -40,11 +45,22 @@ export async function createTechnicianAction(
     return { error: parsed.error.issues[0]?.message ?? "輸入資料有誤" };
   }
 
+  let imageKey: string | undefined;
+  const imageFile = formData.get("image");
+  if (hasFile(imageFile)) {
+    try {
+      imageKey = await saveUploadedFile(branch.shopId, "technician", imageFile);
+    } catch (err) {
+      return { error: err instanceof Error ? err.message : "圖片上傳失敗" };
+    }
+  }
+
   await db.technician.create({
     data: {
       branchId: branch.id,
       name: parsed.data.name,
       specialties: parsed.data.specialties,
+      imageKey,
       workingHours: { createMany: { data: DEFAULT_WORKING_HOURS } },
     },
   });
@@ -71,7 +87,21 @@ export async function updateTechnicianAction(
     return { error: parsed.error.issues[0]?.message ?? "輸入資料有誤" };
   }
 
-  await db.technician.update({ where: { id: technicianId }, data: parsed.data });
+  let imageKey = technician.imageKey;
+  const imageFile = formData.get("image");
+  if (hasFile(imageFile)) {
+    try {
+      imageKey = await saveUploadedFile(branch.shopId, "technician", imageFile);
+    } catch (err) {
+      return { error: err instanceof Error ? err.message : "圖片上傳失敗" };
+    }
+    if (technician.imageKey) await deleteUploadedFile(technician.imageKey);
+  } else if (formData.get("clearImage") === "on") {
+    if (technician.imageKey) await deleteUploadedFile(technician.imageKey);
+    imageKey = null;
+  }
+
+  await db.technician.update({ where: { id: technicianId }, data: { ...parsed.data, imageKey } });
   revalidatePath(`/admin/branches/${branch.id}/technicians`);
   revalidatePath(`/admin/branches/${branch.id}/technicians/${technicianId}`);
   return {};
@@ -81,6 +111,9 @@ export async function deleteTechnicianAction(formData: FormData) {
   const branchId = formData.get("branchId") as string;
   const technicianId = formData.get("technicianId") as string;
   const branch = await requireBranch(branchId);
+
+  const technician = await db.technician.findFirst({ where: { id: technicianId, branchId: branch.id } });
+  if (technician?.imageKey) await deleteUploadedFile(technician.imageKey);
 
   await db.technician.deleteMany({ where: { id: technicianId, branchId: branch.id } });
   revalidatePath(`/admin/branches/${branch.id}/technicians`);

@@ -64,6 +64,11 @@ export function BackgroundForm({ backgrounds }: { backgrounds: PageBackground[] 
           </div>
         )}
         <Input key={`image-${page}`} id="backgroundImage" name="backgroundImage" type="file" accept="image/*" />
+        {page === "LANDING" && (
+          <p className="text-xs text-muted-foreground">
+            首頁的背景圖片會以「主視覺大圖」呈現，並自動加上深色漸層，確保文字清晰可讀 — 建議上傳一張店內或作品照片。
+          </p>
+        )}
       </div>
 
       {state?.error && <p className="text-sm text-destructive">{state.error}</p>}

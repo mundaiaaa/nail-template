@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import Image from "next/image";
 import { db } from "@/lib/db";
 import { requireShop } from "@/lib/shop";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ function ServiceTable({ branchId, services }: { branchId: string; services: Serv
     <Table>
       <TableHeader>
         <TableRow>
+          <TableHead></TableHead>
           <TableHead>服務名稱</TableHead>
           <TableHead>價格</TableHead>
           <TableHead>時長</TableHead>
@@ -31,6 +33,19 @@ function ServiceTable({ branchId, services }: { branchId: string; services: Serv
       <TableBody>
         {services.map((service) => (
           <TableRow key={service.id}>
+            <TableCell>
+              {service.imageKey ? (
+                <Image
+                  src={service.imageKey}
+                  alt=""
+                  width={40}
+                  height={40}
+                  className="rounded-md border object-cover"
+                />
+              ) : (
+                <div className="size-10 rounded-md border bg-muted" />
+              )}
+            </TableCell>
             <TableCell>{service.name}</TableCell>
             <TableCell>NT$ {service.price.toLocaleString("zh-TW")}</TableCell>
             <TableCell>{durationLabel(service)}</TableCell>
