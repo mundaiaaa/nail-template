@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Divider } from "@/components/ui/divider";
 
 const FEATURES = [
   { title: "多分店管理", desc: "每間分店獨立設定服務項目、價格與美甲師班表" },
@@ -12,10 +13,15 @@ const FEATURES = [
 export default function PlatformLandingPage() {
   return (
     <div className="flex flex-1 flex-col">
-      <section className="flex flex-col items-center gap-6 px-4 py-24 text-center">
+      <section
+        className="flex min-h-[78vh] flex-col items-center justify-center gap-3.5 bg-cover bg-center px-4 py-16 text-center"
+        style={{ backgroundImage: "url(/brand/hero-wallpaper.jpg)" }}
+      >
+        <p className="text-xs font-medium tracking-[0.28em] text-muted-foreground">NAIL SALON</p>
         <h1 className="max-w-2xl text-4xl font-bold tracking-tight sm:text-5xl">
           打造您專屬的美甲預約網站
         </h1>
+        <Divider />
         <p className="max-w-xl text-lg text-muted-foreground">
           幾分鐘內建立線上預約系統，管理分店、服務項目與美甲師班表，讓顧客隨時預約。
         </p>
