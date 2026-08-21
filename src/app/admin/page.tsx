@@ -39,7 +39,7 @@ export default async function AdminDashboardPage() {
     { label: "建立第一間分店", done: branchCount > 0, href: "/admin/branches", cta: "新增分店" },
     { label: "新增服務項目", done: serviceCount > 0, href: branchesOrFirstBranchServicesHref, cta: "前往設定" },
     { label: "新增美甲師", done: technicianCount > 0, href: branchesOrFirstBranchTechniciansHref, cta: "前往設定" },
-    { label: "上傳商店標誌", done: !!shop.logoKey, href: "/admin/shop/appearance", cta: "上傳標誌" },
+    { label: "上傳商店 Logo", done: !!shop.logoKey, href: "/admin/shop/appearance", cta: "上傳 Logo" },
     { label: "上傳服務或美甲師照片", done: hasAnyPhoto, href: branchesOrFirstBranchServicesHref, cta: "前往上傳" },
     { label: "網站已上線", done: shop.published, href: "/admin/shop", cta: "前往設定" },
   ];

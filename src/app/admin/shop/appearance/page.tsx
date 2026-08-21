@@ -18,13 +18,13 @@ export default async function AppearancePage() {
     <div className="flex flex-col gap-4">
       <div>
         <h1 className="text-2xl font-semibold">外觀設定</h1>
-        <p className="text-sm text-muted-foreground">自訂您網站的標誌、顏色、背景、字型與貼圖裝飾</p>
+        <p className="text-sm text-muted-foreground">自訂您網站的 Logo、顏色、背景、字型與貼圖裝飾</p>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle>品牌識別</CardTitle>
-          <CardDescription>標誌與主題顏色</CardDescription>
+          <CardDescription>Logo 與主題顏色</CardDescription>
         </CardHeader>
         <CardContent>
           <BrandingForm shop={shop} />

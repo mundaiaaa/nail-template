@@ -30,9 +30,9 @@ export function BrandingForm({ shop }: { shop: Shop }) {
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor="logo">商店標誌</Label>
+        <Label htmlFor="logo">商店 Logo</Label>
         {shop.logoKey && (
-          <Image src={shop.logoKey} alt="標誌" width={64} height={64} className="rounded-full object-cover" />
+          <Image src={shop.logoKey} alt="Logo" width={64} height={64} className="rounded-full object-cover" />
         )}
         <Input id="logo" name="logo" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml" />
       </div>

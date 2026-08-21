@@ -4,10 +4,10 @@ import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/ca
 import { Divider } from "@/components/ui/divider";
 
 const FEATURES = [
-  { title: "多分店管理", desc: "每間分店獨立設定服務項目、價格與美甲師班表" },
+  { title: "多分店管理", desc: "每間分店獨立設定服務項目、價格與美甲師排班" },
   { title: "彈性預約規則", desc: "顧客指定美甲師、系統隨機或依專長自動指派" },
-  { title: "動態時段計算", desc: "依服務時長自動計算可預約時段，不需手動排班" },
-  { title: "外觀客製化", desc: "上傳標誌、字型與貼圖，打造專屬品牌風格" },
+  { title: "動態時段計算", desc: "依設定的服務時長自動計算出可預約時段，不用手動排班啦！" },
+  { title: "外觀客製化", desc: "網站外觀可按照自己的審美來上傳各種背景圖，貼圖素材，打造專屬品牌風格！" },
 ];
 
 export default function PlatformLandingPage() {
